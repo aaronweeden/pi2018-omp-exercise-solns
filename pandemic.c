@@ -21,7 +21,8 @@ int main(int argc, char** argv)
 {
   /** Declare variables **/
   /* People */
-  int num_infected = 1;
+  int num_infected = 0;
+  int new_num_infected = 0;
   int num_people = 50;
   int person1 = 0;
   int current_infected_person = 0;
@@ -39,7 +40,7 @@ int main(int argc, char** argv)
   int env_height = 30;
 
   /* Disease */
-  int infection_radius = 3;
+  int infection_radius = 1;
   int disease_duration = 50;
   int contagiousness_factor = 30;
   int deadliness_factor = 30;
@@ -54,8 +55,8 @@ int main(int argc, char** argv)
   int microseconds_per_day = 100000;
 
   /* Movement */
-  int x_move_direction = 0; 
-  int y_move_direction = 0;
+  int x_dir = 0; 
+  int y_dir = 0;
 
   /* getopt */
   int c = 0;
@@ -222,12 +223,8 @@ int main(int argc, char** argv)
       printf("\n");
     }
 
-    /* Wait between frames of animation */
-    usleep(microseconds_per_day);
-
     /* For each person, spawn threads to do the following */
-#pragma omp parallel for private(i, x_move_direction, \
-  y_move_direction)
+#pragma omp parallel for private(i, x_dir, y_dir)
     for(i = 0; i < num_people; i++)
     {
       /* If the person is not dead, then */
@@ -235,48 +232,49 @@ int main(int argc, char** argv)
       {
         /* Randomly pick whether the person moves left or right or does not move
          * in the x dimension */
-        x_move_direction = (random() % 3) - 1;
+        x_dir = (random() % 3) - 1;
 
         /* Randomly pick whether the person moves up or down or does not move
          * in the y dimension */
-        y_move_direction = (random() % 3) - 1;
+        y_dir = (random() % 3) - 1;
 
         /* If the person will remain in the bounds of the environment after 
          * moving, then */
-        if((xs[i] + x_move_direction >= 0) &&
-           (xs[i] + x_move_direction < env_width) &&
-           (ys[i] + y_move_direction >= 0) &&
-           (ys[i] + y_move_direction < env_height))
+        if((xs[i] + x_dir >= 0) &&
+           (xs[i] + x_dir < env_width) &&
+           (ys[i] + y_dir >= 0) &&
+           (ys[i] + y_dir < env_height))
         {
           /* Move the person */
-          xs[i] += x_move_direction;
-          ys[i] += y_move_direction;
+          xs[i] += x_dir;
+          ys[i] += y_dir;
         }
       }
     }
 
+    new_num_infected = num_infected;
     /* For each person, spawn threads to do the following */
-#pragma omp parallel for private(i, infected_nearby, person2) \
+#pragma omp parallel for private(person1, infected_nearby, person2) \
                          reduction(+:infection_attempts) \
-                         reduction(+:num_infected) \
+                         reduction(+:new_num_infected) \
                          reduction(+:num_susceptible) \
                          reduction(+:num_infections)
-    for(i = 0; i < num_people; i++)
+    for(person1 = 0; person1 < num_people; person1++)
     {
       /* If the person is susceptible, then */
-      if(states[i] == SUSCEPTIBLE)
+      if(states[person1] == SUSCEPTIBLE)
       {
         /* For each of the infected people or until the number of infected 
          *  people nearby is 1, the thread does the following */
         infected_nearby = 0;
-        for(person2 = 0; person2 < num_infected - 1 && infected_nearby < 1;
+        for(person2 = 0; person2 < num_infected && infected_nearby < 1;
             person2++)
         {
           /* If person 1 is within the infection radius, then */
-          if((xs[i] > infected_xs[person2] - infection_radius) &&
-             (xs[i] < infected_xs[person2] + infection_radius) &&
-             (ys[i] > infected_ys[person2] - infection_radius) &&
-             (ys[i] < infected_ys[person2] + infection_radius))
+          if((xs[person1] >= infected_xs[person2] - infection_radius) &&
+             (xs[person1] <= infected_xs[person2] + infection_radius) &&
+             (ys[person1] >= infected_ys[person2] - infection_radius) &&
+             (ys[person1] <= infected_ys[person2] + infection_radius))
           {
             /* Increment the number of infected people nearby */
             infected_nearby++;
@@ -294,15 +292,16 @@ int main(int argc, char** argv)
         if(infected_nearby >= 1 && (random() % 100) <= contagiousness_factor)
         {
           /* Change person1's state to infected */
-          states[i] = INFECTED;
+          states[person1] = INFECTED;
 
           /* Update the counters */
-          num_infected++;
+          new_num_infected++;
           num_susceptible--;
           num_infections++;
         }
       }
     }
+    num_infected = new_num_infected;
 
     /* For each person, spawn threads to do the following */
 #pragma omp parallel for private(i) \
