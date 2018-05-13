@@ -244,11 +244,9 @@ int main(int argc, char** argv)
         /* If the person will remain in the bounds of the environment after 
          * moving, then */
         if((xs[i] + x_move_direction >= 0) &&
-           (xs[i] + x_move_direction <
-             env_width) &&
+           (xs[i] + x_move_direction < env_width) &&
            (ys[i] + y_move_direction >= 0) &&
-           (ys[i] + y_move_direction <
-             env_height))
+           (ys[i] + y_move_direction < env_height))
         {
           /* Move the person */
           xs[i] += x_move_direction;
@@ -271,8 +269,8 @@ int main(int argc, char** argv)
         /* For each of the infected people or until the number of infected 
          *  people nearby is 1, the thread does the following */
         infected_nearby = 0;
-        for(person2 = 0; person2 < num_infected - 1 &&
-            infected_nearby < 1; person2++)
+        for(person2 = 0; person2 < num_infected - 1 && infected_nearby < 1;
+            person2++)
         {
           /* If person 1 is within the infection radius, then */
           if((xs[i] > infected_xs[person2] - infection_radius) &&
