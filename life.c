@@ -85,6 +85,8 @@ int main(int argc, char **argv)
   int **current_grid, **next_grid;
   int step;
 
+  double startTime = omp_get_wtime();
+
   /* Parse command line arguments */ 
   while((c = getopt(argc, argv, "r:c:t:")) != -1)
   {
@@ -290,6 +292,8 @@ int main(int argc, char **argv)
   }
   free(next_grid);
   free(current_grid);
+
+  printf("Runtime: %f seconds\n", omp_get_wtime() - startTime);
 
   return 0;
 }
