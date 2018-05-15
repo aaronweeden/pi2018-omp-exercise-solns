@@ -27,6 +27,8 @@ char const GETOPT_STRING[] = {
 };
 
 int main(int argc, char **argv) {
+  /* Start the timer */
+  double startTime = omp_get_wtime();
   bool isError = false;
 
   /* Get user options for number of rectangles */
@@ -86,6 +88,11 @@ int main(int argc, char **argv) {
   /* Calculate pi and print it */
   printf("%.*f\n", DBL_DIG, 4.0 * areaSum);
   printf("Value of pi from math.h is %.*f\n", DBL_DIG, M_PI);
+
+  /* Stop the timer, print the total elapsed time */
+  printf("Runtime: %f seconds\n",
+    omp_get_wtime() - startTime);
+
   return 0;
 }
 
